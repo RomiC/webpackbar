@@ -1,9 +1,11 @@
 import path from 'path';
+
 import chalk from 'chalk';
 import _ from 'lodash';
 import figures from 'figures';
 import { table } from 'table';
 import prettyTime from 'pretty-time';
+
 import getDescription from './description';
 
 const BAR_LENGTH = 25;
@@ -128,3 +130,33 @@ export const formatStats = (allStats) => {
 
   return lines.join('\n\n');
 };
+
+export const getNextColor = (() => {
+  const colorsList = [
+    'green',
+    'red',
+    'yellow',
+    'blue',
+    'magenta',
+    'cyan',
+    'white',
+    'black',
+    'blackBright',
+    'redBright',
+    'greenBright',
+    'yellowBright',
+    'blueBright',
+    'magentaBright',
+    'cyanBright',
+    'whiteBright',
+  ];
+
+  let curIndex = 0;
+
+  return () => {
+    const nextColor = colorsList[curIndex];
+    curIndex += 1;
+
+    return nextColor;
+  };
+})();

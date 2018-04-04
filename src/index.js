@@ -5,6 +5,7 @@ import logUpdate from 'log-update';
 import env from 'std-env';
 import consola from 'consola';
 import prettyTime from 'pretty-time';
+
 import Profile from './profile';
 import {
   BULLET,
@@ -13,6 +14,7 @@ import {
   renderBar,
   formatStats,
   colorize,
+  getNextColor,
 } from './utils';
 
 const sharedState = {};
@@ -44,22 +46,30 @@ export default class WebpackBarPlugin extends webpack.ProgressPlugin {
     this.logUpdate =
       this.options.logUpdate ||
       (this.options.stream === process.stderr ? logUpdate.stderr : logUpdate);
-
-    if (!this.state) {
-      sharedState[this.options.name] = {
-        isRunning: false,
-        color: this.options.color,
-        profile: this.options.profile ? new Profile(this.options.name) : null,
-      };
-    }
   }
 
   get state() {
-    return sharedState[this.options.name];
+    return sharedState[this.name];
   }
 
   apply(compiler) {
     super.apply(compiler);
+
+    this.name =
+      this.options.name === defaults.name && !!compiler.options.name
+        ? compiler.options.name
+        : this.options.name;
+
+    if (!sharedState[this.name]) {
+      sharedState[this.name] = {
+        isRunning: false,
+        color:
+          this.options.color !== defaults.color
+            ? this.options.color
+            : getNextColor(),
+        profile: this.options.profile ? new Profile(this.name) : null,
+      };
+    }
 
     const hook = (stats) => {
       this.state.stats = stats;
@@ -113,13 +123,11 @@ export default class WebpackBarPlugin extends webpack.ProgressPlugin {
       // Finished
       const time = process.hrtime(this.state.start);
       if (this.options.minimal) {
-        consola.success(`Compiled ${this.options.name} in ${prettyTime(time)}`);
+        consola.success(`Compiled ${this.name} in ${prettyTime(time)}`);
       } else {
         this.logUpdate.clear();
         if (this.options.compiledIn) {
-          consola.success(
-            `${this.options.name} compiled in ${prettyTime(time, 'ms')}`
-          );
+          consola.success(`${this.name} compiled in ${prettyTime(time, 'ms')}`);
         }
       }
       delete this.state.start;
